@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: ["gh-readonly-queue/**"]
+  pull_request:
+  merge_group:
+
+jobs:
+  cargo-tests:
+    name: Lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Lint with clippy
+        run: cargo clippy --locked --all-features -- -D warnings
+
+      - name: Run tests
+        run: cargo test --locked --all-features
+
+  docker-build:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Attempt to build the image
+        run: |
+          docker build -t ip-checker .
+
+  bare-metal-build:
+    name: Build & test rust executable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        run: cargo build --release --locked
