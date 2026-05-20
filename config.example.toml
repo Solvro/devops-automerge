@@ -1,0 +1,14 @@
+[listen]
+tcp = "[::]:8080"
+unix = "/tmp/automerge.sock"
+unix_mode = 0o666
+
+[app]
+webhook_secret = "webhook secret that should be secret"
+client_id = "2137"
+private_key = """
+-----BEGIN RSA PRIVATE KEY-----
+rsa key contents would be here if this
+was an actual private key (which it is not)
+-----END RSA PRIVATE KEY-----
+"""
