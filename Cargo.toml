@@ -4,3 +4,19 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum = "0.8.9"
+cloneable_errors = "2.3.0"
+octocrab = "0.51.0"
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = { version = "1.52.3", features = ["io-util", "net", "rt-multi-thread"] }
+toml = "1.1.2"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+todo = "warn"
+
+[profile.release]
+strip = true
+lto = "thin"
