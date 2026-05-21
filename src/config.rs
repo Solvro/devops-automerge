@@ -4,8 +4,17 @@ use base64::Engine;
 use cloneable_errors::{ErrorContext, ResContext, bail};
 use serde::Deserialize;
 
+#[derive(Clone)]
 pub struct AppConfig {
     pub app: GithubAppConfig,
+}
+
+impl From<&FileConfig> for AppConfig {
+    fn from(value: &FileConfig) -> Self {
+        Self {
+            app: value.app.clone(),
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -18,8 +27,8 @@ pub struct FileConfig {
 #[derive(Deserialize, Clone)]
 pub struct GithubAppConfig {
     pub webhook_secret: Arc<str>,
-    pub private_key: Arc<str>,
-    pub client_id: Arc<str>,
+    // pub private_key: Arc<str>,
+    // pub client_id: Arc<str>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -17,7 +17,7 @@ use tracing::info;
 use crate::{config::FileConfig, routes::create_router};
 
 pub async fn run_server(config: FileConfig) -> Result<(), ErrorContext> {
-    let router = create_router();
+    let router = create_router((&config).into());
     let mut join_set = JoinSet::<Result<(), ErrorContext>>::new();
 
     if let Some(addr) = config.listen.tcp {

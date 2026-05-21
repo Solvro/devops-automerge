@@ -5,8 +5,9 @@ edition = "2024"
 
 [dependencies]
 async-signal = "0.2.14"
-axum = "0.8.9"
+axum = { version = "0.8.9", features = ["macros"] }
 base64 = "0.22.1"
+bytes = "1.11.1"
 cloneable_errors = "2.3.0"
 ctutils = "0.4.2"
 futures-lite = "2.6.1"

@@ -8,6 +8,7 @@ mod config;
 mod health;
 mod routes;
 mod server;
+mod utils;
 
 #[tokio::main]
 async fn main() -> Result<(), ErrorContext> {
