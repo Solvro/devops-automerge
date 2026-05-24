@@ -12,3 +12,31 @@ rsa key contents would be here if this
 was an actual private key (which it is not)
 -----END RSA PRIVATE KEY-----
 """
+
+
+[[rules]]
+# rule name, for debugging
+name = "repo 1"
+# repos to apply this rule to
+repositories = ["Solvro/lib-web-solvro-config"]
+# available methods:
+# instant_*: merge, squash, rebase
+# auto_*: merge, squash, rebase
+# add_to_merge_queue
+merge_method = "auto_squash"
+# allowed base branches
+branches = ["main"]
+# allowed file paths
+allowed_paths = ["package-lock.json", "package.json"]
+# max commits allowed for an automerged pr
+max_commits = 4
+# max modfied files allowed
+max_files = 3
+# max additions + deletions
+max_changed_lines = 67
+
+[rules.dependabot]
+dependency_names = ["@solvro/config"]
+dependency_groups = ["typescript-eslint"]
+dependency_types = ["direct:production"]
+update_types = ["version-update:semver-patch", "version-update:semver-minor"]
