@@ -1,0 +1,86 @@
+query PullRequestQuery($node_id: ID!) {
+  node(id: $node_id) {
+    __typename
+    ... on PullRequest {
+      author {
+        ...ActorProps
+      }
+      commits(first: 100) {
+        totalCount
+        nodes {
+          commit {
+            author {
+              email
+              name
+            }
+            committer {
+              email
+              name
+            }
+            signature {
+              __typename
+              isValid
+              state
+              wasSignedByGitHub
+              signer {
+                login
+                id
+              }
+            }
+            message
+          }
+        }
+      }
+      files(first: 100) {
+        totalCount
+        nodes {
+          changeType
+          path
+        }
+      }
+      id
+      additions
+      deletions
+      state
+      baseRefName
+      headRefOid
+      mergeQueueEntry {
+        enqueuer {
+          ...ActorProps
+        }
+      }
+      autoMergeRequest {
+        enabledBy {
+          ...ActorProps
+        }
+      }
+      repository {
+        nameWithOwner
+      }
+    }
+  }
+  viewer {
+    id
+    login
+  }
+}
+
+fragment ActorProps on Actor {
+  __typename
+  login
+  ... on Bot {
+    id
+  }
+  ... on EnterpriseUserAccount {
+    id
+  }
+  ... on Mannequin {
+    id
+  }
+  ... on Organization {
+    id
+  }
+  ... on User {
+    id
+  }
+}

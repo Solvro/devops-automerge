@@ -1,0 +1,9 @@
+mutation MergePullRequest($id: ID!, $headOid: GitObjectID!, $method: PullRequestMergeMethod!) {
+  mergePullRequest(input: {
+    pullRequestId: $id,
+    expectedHeadOid: $headOid,
+    mergeMethod: $method,
+  }) {
+    clientMutationId
+  }
+}

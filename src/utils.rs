@@ -7,10 +7,9 @@ use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 use tracing::warn;
 
-use crate::config::GithubAppConfig;
 type HmacSha256 = Hmac<Sha256>;
 
-pub fn verify_webhook_payload(body: &Bytes, headers: &HeaderMap, config: &GithubAppConfig) -> bool {
+pub fn verify_webhook_payload(body: &Bytes, headers: &HeaderMap, webhook_secret: &str) -> bool {
     let Some(signature) = headers.get("X-Hub-Signature-256") else {
         warn!("Invalid POST /webhook: no X-Hub-Signature-256");
         return false;
@@ -45,7 +44,7 @@ pub fn verify_webhook_payload(body: &Bytes, headers: &HeaderMap, config: &Github
     };
 
     // calculate the hmac
-    let mut mac = HmacSha256::new_from_slice(config.webhook_secret.as_bytes())
+    let mut mac = HmacSha256::new_from_slice(webhook_secret.as_bytes())
         .expect("Configured webhook secret is not a valid HMAC key???");
     mac.update(body);
     let mac = mac.finalize();

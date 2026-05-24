@@ -1,0 +1,9 @@
+mutation EnableAutomerge($id: ID!, $headOid: GitObjectID!, $method: PullRequestMergeMethod!) {
+  enablePullRequestAutoMerge(input: {
+    pullRequestId: $id,
+    expectedHeadOid: $headOid,
+    mergeMethod: $method,
+  }) {
+    clientMutationId
+  }
+}

@@ -2,6 +2,7 @@
 name = "devops-automerge"
 version = "0.1.0"
 edition = "2024"
+build = "src/build_script.rs"
 
 [dependencies]
 async-signal = "0.2.14"
@@ -13,7 +14,8 @@ ctutils = "0.4.2"
 futures-lite = "2.6.1"
 graphql_client = "0.16.0"
 hmac = "0.13.0"
-octocrab = "0.51.0"
+jsonwebtoken = { version = "10.4.0" }
+octocrab = { version = "0.51.0", default-features = false, features = ["default-client", "follow-redirect", "jwt-rust-crypto", "retry", "rustls", "timeout", "tracing"] }
 reqwest = "0.13.3"
 serde = { version = "1.0.228", features = ["derive", "rc"] }
 sha2 = "0.11.0"
@@ -21,10 +23,23 @@ tokio = { version = "1.52.3", features = ["io-util", "net", "rt-multi-thread"] }
 toml = "1.1.2"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
+yaml_serde = "0.10.4"
+
+[build-dependencies]
+cloneable_errors = "2.3.0"
+reqwest = { version = "0.13.3", features = ["blocking"] }
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }
 todo = "warn"
+
+[package.metadata.bacon]
+default_job = "clippy"
+
+[package.metadata.bacon.jobs.clippy]
+watch = ["queries"]
+command = ["cargo", "clippy"]
+need_stdout = false
 
 [profile.release]
 strip = true

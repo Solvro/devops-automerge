@@ -1,0 +1,8 @@
+mutation EnqueuePullRequest($id: ID!, $headOid: GitObjectID!) {
+  enqueuePullRequest(input: {
+    pullRequestId: $id,
+    expectedHeadOid: $headOid,
+  }) {
+    clientMutationId
+  }
+}

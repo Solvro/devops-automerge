@@ -5,10 +5,14 @@ use cloneable_errors::{ErrorContext, ResContext};
 use crate::{config::FileConfig, health::run_healthchecks, server::run_server};
 
 mod config;
+mod dependabot;
+mod graphql;
 mod health;
 mod routes;
+mod rules;
 mod server;
 mod utils;
+mod webhook;
 
 #[tokio::main]
 async fn main() -> Result<(), ErrorContext> {

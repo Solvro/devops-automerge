@@ -1,0 +1,12 @@
+query CheckPermission($repo_id: ID!, $login: String!) {
+  node(id: $repo_id) {
+    __typename
+    ... on Repository {
+      collaborators(login: $login) {
+        edges {
+          permission
+        }
+      }
+    }
+  }
+}
