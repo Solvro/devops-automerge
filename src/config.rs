@@ -213,13 +213,13 @@ pub struct DependabotRule {
     /// None = no restrictions
     /// Some = only automerge PRs that upgrade the specified dependency groups
     ///
-    /// NOTE: to allow dependencies without a dependency group to be updated, specify null as
-    /// one of the entries on this list
+    /// NOTE: to allow dependencies without a dependency group to be updated, specify an empty
+    /// string as one of the entries on this list
     /// WARNING: this check relies on data specified in dependabot's commit descriptions!
     ///          commit descriptions are only trusted if authored by dependabot and if github
     ///          vouches them as verified, but should github be compromised, this may merge
     ///          untrusted PRs!
-    pub dependency_groups: Option<Box<[Option<Box<str>>]>>,
+    pub dependency_groups: Option<Box<[Box<str>]>>,
     /// "dependency-type"s that may be specified in dependabot PR commits
     ///
     /// None = no restrictions
@@ -237,13 +237,13 @@ pub struct DependabotRule {
     /// Some = only automerge PRs where all updates across all commits only specify the specified
     ///        "update-type"s
     ///
-    /// NOTE: to allow updates with no update-type specified to be automerged, specify null as one
-    /// of the entries on this list
+    /// NOTE: to allow updates with no update-type specified to be automerged, specify an empty
+    /// string as one of the entries on this list
     /// WARNING: this check relies on data specified in dependabot's commit descriptions!
     ///          commit descriptions are only trusted if authored by dependabot and if github
     ///          vouches them as verified, but should github be compromised, this may merge
     ///          untrusted PRs!
-    pub update_types: Option<Box<[Option<Box<str>>]>>,
+    pub update_types: Option<Box<[Box<str>]>>,
 }
 
 #[derive(Debug, Deserialize)]

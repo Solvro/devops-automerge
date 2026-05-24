@@ -250,7 +250,7 @@ fn match_dependabot_rule(
             if let Some(ref groups) = rule.dependency_groups
                 && !groups
                     .iter()
-                    .any(|x| x.as_deref() == update.dependency_group.as_deref())
+                    .any(|x| **x == *update.dependency_group.as_deref().unwrap_or_default())
             {
                 return Some(
                     "A dependency from outside of the allowed dependency groups list was updated",
@@ -266,7 +266,7 @@ fn match_dependabot_rule(
             if let Some(ref types) = rule.update_types
                 && !types
                     .iter()
-                    .any(|x| x.as_deref() == update.update_type.as_deref())
+                    .any(|x| **x == *update.update_type.as_deref().unwrap_or_default())
             {
                 return Some("One of the update types was outside of the allowed list");
             }
