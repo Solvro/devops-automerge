@@ -39,7 +39,7 @@ jobs:
         run: |
           # set up the container
           mkdir container-shared
-          docker run -dh devops-automerge --name devops-automerge-container --rm -v $PWD/container-shared:/host -v $PWD/config.test.json:/config.json:ro -e IP_CHECKER_CONFIG_FILE=/config.json -w /host -p 8080:8080 devops-automerge
+          docker run -dh devops-automerge --name devops-automerge-container --rm -v $PWD/container-shared:/host -v $PWD/config.test.toml:/config.toml:ro -e AUTOMERGE_CONFIG_FILE=/config.toml -w /host -p 8080:8080 devops-automerge
           # give it like 10 seconds
           sleep 10
           STOP_TOKEN="`uuidgen`"
@@ -79,12 +79,12 @@ jobs:
           echo "::stop-commands::$STOP_TOKEN"
           # start the server
           echo starting server
-          IP_CHECKER_CONFIG_FILE=./config.test.json ./target/release/devops-automerge &
+          AUTOMERGE_CONFIG_FILE=./config.test.toml ./target/release/devops-automerge &
           # give it some time
           sleep 1
           # run built-in healthchecks
           echo built-in healthchecks
-          IP_CHECKER_CONFIG_FILE=./config.test.json ./target/release/devops-automerge health
+          AUTOMERGE_CONFIG_FILE=./config.test.toml ./target/release/devops-automerge health
           # manual healthchecks
           echo manual healthcheck TCP
           curl --fail-with-body -v --max-time 1 http://localhost:8080/health
