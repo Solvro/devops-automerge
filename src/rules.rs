@@ -164,7 +164,7 @@ pub fn check_automerge_eligibility<'a>(
                 .iter()
                 .flatten()
                 .flatten()
-                .all(|file| allowed_paths.iter().any(|x| **x == *file.path))
+                .all(|file| allowed_paths.iter().any(|x| x.matches(&file.path)))
         {
             failures.push((
                 rule.name.clone(),

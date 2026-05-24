@@ -26,8 +26,9 @@ repositories = ["Solvro/lib-web-solvro-config"]
 merge_method = "auto_squash"
 # allowed base branches
 branches = ["main"]
-# allowed file paths
-allowed_paths = ["package-lock.json", "package.json"]
+# allowed file path patterns
+# this matches any package-lock.json file, anywhere; and a package.json in the repository root
+allowed_paths = ["**/package-lock.json", "/package.json"]
 # max commits allowed for an automerged pr
 max_commits = 4
 # max modfied files allowed

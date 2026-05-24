@@ -12,6 +12,7 @@ bytes = "1.11.1"
 cloneable_errors = "2.3.0"
 ctutils = "0.4.2"
 futures-lite = "2.6.1"
+glob = "0.3.3"
 graphql_client = "0.16.0"
 hmac = "0.13.0"
 jsonwebtoken = { version = "10.4.0" }

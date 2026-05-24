@@ -117,11 +117,11 @@ pub struct AutomergeRule {
     /// empty array = no branches are eligible
     #[serde(default)]
     pub branches: Option<Box<[Box<str>]>>,
-    /// paths that are allowed to be modified by PRs
+    /// path patterns that are allowed to be modified by PRs
     ///
     /// None = no restrictions,
     /// Some = only automerge PRs that only modify the specified paths
-    pub allowed_paths: Option<Box<[Box<str>]>>,
+    pub allowed_paths: Option<Box<[Glob]>>,
     /// max amount of commits a PR can have to be eligible for automerge
     ///
     /// NOTE: All PRs must have between 1 and 100 (inclusive) commits to be eligible for automerge.
@@ -325,4 +325,56 @@ fn deserialize_key<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Encodin
     }
 
     deserializer.deserialize_str(KeyVisitor)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Glob(glob::Pattern);
+
+impl<'de> Deserialize<'de> for Glob {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct GlobVisitor;
+        impl Visitor<'_> for GlobVisitor {
+            type Value = Glob;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a valid unix-style path pattern (glob)")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                glob::Pattern::new(v).map_err(E::custom).map(Glob)
+            }
+        }
+
+        deserializer.deserialize_str(GlobVisitor)
+    }
+}
+
+impl Glob {
+    pub fn matches(&self, other: &str) -> bool {
+        if other.starts_with('/') {
+            self.0.matches_with(
+                other,
+                glob::MatchOptions {
+                    case_sensitive: true,
+                    require_literal_separator: true,
+                    require_literal_leading_dot: false,
+                },
+            )
+        } else {
+            self.0.matches_with(
+                &format!("/{other}"),
+                glob::MatchOptions {
+                    case_sensitive: true,
+                    require_literal_separator: true,
+                    require_literal_leading_dot: false,
+                },
+            )
+        }
+    }
 }
