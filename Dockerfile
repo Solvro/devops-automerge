@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.23
 FROM docker.io/library/rust:alpine AS builder
 # add only what's necessary
-COPY --parents src/ Cargo.lock Cargo.toml /source/
+COPY --parents queries/ src/ Cargo.lock Cargo.toml /source/
 WORKDIR /source
 # compile
 RUN --mount=type=cache,target=/usr/local/cargo/registry,id=alpine_cargo_dir \
