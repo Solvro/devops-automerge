@@ -264,10 +264,9 @@ fn match_dependabot_rule(
                 );
             }
             if let Some(ref types) = rule.update_types
-                && !update
-                    .update_type
-                    .as_ref()
-                    .is_some_and(|update_type| types.iter().any(|x| **x == *update_type))
+                && !types
+                    .iter()
+                    .any(|x| x.as_deref() == update.update_type.as_deref())
             {
                 return Some("One of the update types was outside of the allowed list");
             }

@@ -237,11 +237,13 @@ pub struct DependabotRule {
     /// Some = only automerge PRs where all updates across all commits only specify the specified
     ///        "update-type"s
     ///
+    /// NOTE: to allow updates with no update-type specified to be automerged, specify null as one
+    /// of the entries on this list
     /// WARNING: this check relies on data specified in dependabot's commit descriptions!
     ///          commit descriptions are only trusted if authored by dependabot and if github
     ///          vouches them as verified, but should github be compromised, this may merge
     ///          untrusted PRs!
-    pub update_types: Option<Box<[Box<str>]>>,
+    pub update_types: Option<Box<[Option<Box<str>>]>>,
 }
 
 #[derive(Debug, Deserialize)]
