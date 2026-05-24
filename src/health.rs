@@ -13,6 +13,7 @@ pub async fn run_healthchecks(listen_config: ListenConfig) -> Result<(), ErrorCo
         let start = Instant::now();
         info!("Checking {unix_path} over unix sockets");
         let client = ClientBuilder::new()
+            .tls_certs_only([])
             .unix_socket(&*unix_path)
             .timeout(Duration::from_secs(1))
             .build()
@@ -35,6 +36,7 @@ pub async fn run_healthchecks(listen_config: ListenConfig) -> Result<(), ErrorCo
         let start = Instant::now();
         info!("Checking {target} over TCP");
         let client = ClientBuilder::new()
+            .tls_certs_only([])
             .timeout(Duration::from_secs(1))
             .build()
             .context("Failed to build new reqwest client")?;
