@@ -33,7 +33,32 @@ jobs:
 
       - name: Attempt to build the image
         run: |
-          docker build -t ip-checker .
+          docker build -t devops-automerge .
+
+      - name: Test the image
+        run: |
+          # set up the container
+          mkdir container-shared
+          docker run -dh devops-automerge --name devops-automerge-container --rm -v $PWD/container-shared:/host -v $PWD/config.test.json:/config.json:ro -e IP_CHECKER_CONFIG_FILE=/config.json -w /host -p 8080:8080 devops-automerge
+          # give it like 10 seconds
+          sleep 10
+          STOP_TOKEN="`uuidgen`"
+          echo "::stop-commands::$STOP_TOKEN"
+          # check status
+          docker inspect devops-automerge-container -f '{{ .State.Status }}' | grep '^running$'
+          docker inspect devops-automerge-container -f '{{ .State.Health.Status }}' | grep '^healthy$'
+          # run our own checks
+          echo manual healthcheck TCP
+          curl --fail-with-body -v --max-time 1 http://localhost:8080/health
+          echo manual healthcheck unix
+          curl --fail-with-body -v --max-time 1 --unix-socket ./container-shared/devops-automerge.sock http://localhost:8080/health
+          echo main route check TCP
+          curl --fail-with-body -v --max-time 1 http://localhost:8080/
+          echo main route check unix
+          curl --fail-with-body -v --max-time 1 --unix-socket ./container-shared/devops-automerge.sock http://localhost:8080/
+          # finish
+          docker stop devops-automerge-container
+          echo "::$STOP_TOKEN::"
 
   bare-metal-build:
     name: Build & test rust executable
@@ -46,3 +71,31 @@ jobs:
 
       - name: Build
         run: cargo build --release --locked
+
+      - name: Run & check compiled executable
+        timeout-minutes: 1
+        run: |
+          STOP_TOKEN="`uuidgen`"
+          echo "::stop-commands::$STOP_TOKEN"
+          # start the server
+          echo starting server
+          IP_CHECKER_CONFIG_FILE=./config.test.json ./target/release/devops-automerge &
+          # give it some time
+          sleep 1
+          # run built-in healthchecks
+          echo built-in healthchecks
+          IP_CHECKER_CONFIG_FILE=./config.test.json ./target/release/devops-automerge health
+          # manual healthchecks
+          echo manual healthcheck TCP
+          curl --fail-with-body -v --max-time 1 http://localhost:8080/health
+          echo manual healthcheck unix
+          curl --fail-with-body -v --max-time 1 --unix-socket ./devops-automerge.sock http://localhost:8080/health
+          echo main route check TCP
+          curl --fail-with-body -v --max-time 1 http://localhost:8080/
+          echo main route check unix
+          curl --fail-with-body -v --max-time 1 --unix-socket ./devops-automerge.sock http://localhost:8080/
+          # interrupt the server and join
+          echo checks done, stopping server
+          kill -INT %1
+          wait
+          echo "::$STOP_TOKEN::"

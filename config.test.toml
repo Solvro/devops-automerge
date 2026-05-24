@@ -1,0 +1,69 @@
+[listen]
+tcp = "[::]:8080"
+unix = "./devops-automerge.sock"
+unix_mode = 0o666
+
+[app]
+webhook_secret = "webhook secret that should be secret"
+app_id = 2137
+# THIS IS A FAKE KEY
+private_key = """
+-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC1pS599wIlnEu+
+oF8fFm5Z1XRSf12tUCo2hNU8KOfDzb1BAIfUqY3klFIrv0N0AzxQ6jJR+iQtWtrF
+ZEO6gZfbrfWiBNmmK10k53Ad1CnMDCH+V60ay65Qp8NdJSk0XSLj+E/LouQGSzji
+Z2zjnM8Fe1WXGh7A6XQ6s3pWdIKca/32TBUBni8Emrl08SZnOB7uThI5Rdyhq1yz
+dzdjysB/lXaPIxVrC8rbb4eNATkIuWVla7jM/gol026qQm18fetYz4/pGkHYw68w
+XhykwDwsRXeuvXAZjRf83SIkLS1cd7owg2/i2TxuLZH+hfg/nL8weOkU/PwkqqaX
+X9bT+UM1AgMBAAECggEAHJzyB2anAGyv483YXgnHBUCiC7LDe18S3zaqbkkVRRs+
+EiS2wNGap+STUw/UXMx7rlVN6urn0vsqVgi2wITUeobbGBQCgvH2wK7yUsiOcvWA
+T1PZUUy/XzYmCKCnbnezXMzLKQ02NSWZRtS66tnTJI5qi5xSNtovdGW8Qi0lO+Vk
+Wk2QM9m2vHFlGHTl0wG++PkLM6XNsl7iNgWnth7rKFQkk1ww8AlSolL96snTcbRZ
+RxbbpRhiG2nDwSw/Q90Nt6ssllNRWhZYZ9uPF7xV5cmCwrHqSl8fQq1AR3wN3AkP
+JRv5dD8Arl0QA9daBzoqcp9RKxYaggfxxjfnBEMgGwKBgQD5YzTSRohYZj4G0qnC
+56prV99SZp1nunwWXTJ9EbRmrKyGkS05QUxEqtNptBWDmD+XuNB3DfU2BZiDGHIY
+fayXxWOxJUb9oZO0hYUlbwbaYuAR+j3d9rqsmYcmn9Mjh4iHoB420THh65TEZYhT
+KKWlE6D3Z6UP91FgEwrXvgwajwKBgQC6didnZX9wBrhpVdb/hBPO+KstXMTqfWhe
+oPZ1z1Z1auzh+APDoeY94DmDvAmldNhoTWqyaokKY3XMY041Bz20BXgW0gMPT9Tf
+TEgyiAFHpZP0Nn8TQ27nFZteKCIC/EDW+0u0VVP12/ZLNpWFrmzjHc3YGcCtsh4G
+pWuYAnG3+wKBgQCGe54Haqup5/C44y9SgHUhD7DJEbb+Mc0qjjVkxoBfAezDYFRf
+1LuZJ/l7vfYAEcDxQ2N/YBKEgD3/K9aTKGpDKdmZtH101oX9SidDyXyLldg5OZXV
+NXDzFJOSG4vTVAonAQxqCSN6Lfz6b7o1Be1VeKFL6SNU2cyTH5GwR7blNwKBgFzN
+dasmfxjYn2v9xzYBHILEjR3UsEUtCYcfgcr82MEz6JZHBEiYCan+MWH5cqugzhyL
+e3E1SOOcwQJq4n/ODM3OcwiYmeFDEGXa54wO2OQ56rt/bBvAUjA9NsjUHKlztynI
+hNNKLLGPOrQQhLa2K4eWS98kYhuRLRSNvFE51jOFAoGBALVuLtpHosdwxUG4Lv0+
+hDqcMnxGPFVkRs0rtN77c2qsAPGrifv3pTG5Ts6ZDPj99HvBF7fupYwMe47zntvH
+qLxJq+an/gwhZL9cTHtlGnUvkiWzQxWQiJCIPv30erWTTu65mz1q3CmpycGTyARy
+t/hSmz1G7Pxcip/9fSAovrth
+-----END PRIVATE KEY-----
+"""
+# THIS IS A FAKE KEY
+
+
+[[rules]]
+# rule name, for debugging
+name = "repo 1"
+# repos to apply this rule to
+repositories = ["Solvro/lib-web-solvro-config"]
+# available methods:
+# instant_*: merge, squash, rebase
+# auto_*: merge, squash, rebase
+# add_to_merge_queue
+merge_method = "auto_squash"
+# allowed base branches
+branches = ["main"]
+# allowed file path patterns
+# this matches any package-lock.json file, anywhere; and a package.json in the repository root
+allowed_paths = ["**/package-lock.json", "/package.json"]
+# max commits allowed for an automerged pr
+max_commits = 4
+# max modfied files allowed
+max_files = 3
+# max additions + deletions
+max_changed_lines = 67
+
+[rules.dependabot]
+dependency_names = ["@solvro/config"]
+dependency_groups = ["typescript-eslint"]
+dependency_types = ["direct:production"]
+update_types = ["version-update:semver-patch", "version-update:semver-minor"]
