@@ -1,6 +1,6 @@
 [listen]
 tcp = "[::]:8080"
-unix = "./devops-automerge.sock"
+unix = "host/devops-automerge.sock"
 unix_mode = 0o666
 
 [app]

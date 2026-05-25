@@ -13,6 +13,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,id=alpine_cargo_dir \
 
 # prod image
 FROM scratch
+USER 1000:1000
 COPY --from=builder /devops-automerge /devops-automerge
 ENTRYPOINT ["/devops-automerge"]
 HEALTHCHECK --start-period=1s --interval=15s --timeout=1s CMD ["/devops-automerge", "health"]

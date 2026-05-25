@@ -39,7 +39,8 @@ jobs:
         run: |
           # set up the container
           mkdir container-shared
-          docker run -dh devops-automerge --name devops-automerge-container --rm -v $PWD/container-shared:/host -v $PWD/config.test.toml:/config.toml:ro -e AUTOMERGE_CONFIG_FILE=/config.toml -w /host -p 8080:8080 devops-automerge
+          chmod 1777 container-shared
+          docker run -dh devops-automerge --name devops-automerge-container --rm -v $PWD/container-shared:/host -v $PWD/config.test.toml:/config.toml:ro -e AUTOMERGE_CONFIG_FILE=/config.toml -p 8080:8080 devops-automerge
           # give it like 10 seconds
           sleep 10
           STOP_TOKEN="`uuidgen`"
@@ -75,6 +76,7 @@ jobs:
       - name: Run & check compiled executable
         timeout-minutes: 1
         run: |
+          mkdir host
           STOP_TOKEN="`uuidgen`"
           echo "::stop-commands::$STOP_TOKEN"
           # start the server
@@ -89,11 +91,11 @@ jobs:
           echo manual healthcheck TCP
           curl --fail-with-body -v --max-time 1 http://localhost:8080/health
           echo manual healthcheck unix
-          curl --fail-with-body -v --max-time 1 --unix-socket ./devops-automerge.sock http://localhost:8080/health
+          curl --fail-with-body -v --max-time 1 --unix-socket ./host/devops-automerge.sock http://localhost:8080/health
           echo main route check TCP
           curl --fail-with-body -v --max-time 1 http://localhost:8080/
           echo main route check unix
-          curl --fail-with-body -v --max-time 1 --unix-socket ./devops-automerge.sock http://localhost:8080/
+          curl --fail-with-body -v --max-time 1 --unix-socket ./host/devops-automerge.sock http://localhost:8080/
           # interrupt the server and join
           echo checks done, stopping server
           kill -INT %1
