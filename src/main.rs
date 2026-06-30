@@ -4,6 +4,7 @@ use cloneable_errors::{ErrorContext, ResContext};
 
 use crate::{config::FileConfig, health::run_healthchecks, server::run_server};
 
+mod automerge;
 mod config;
 mod dependabot;
 mod graphql;

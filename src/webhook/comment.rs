@@ -1,103 +1,26 @@
-use std::fmt::Write;
-
 use cloneable_errors::{ErrorContext, ResContext, bail};
 use graphql_client::GraphQLQuery;
 use octocrab::{
     Octocrab,
     models::webhook_events::{
         WebhookEvent,
-        WebhookEventPayload::{IssueComment, PullRequest},
-        payload::{
-            IssueCommentWebhookEventAction, IssueCommentWebhookEventPayload,
-            PullRequestWebhookEventAction, PullRequestWebhookEventPayload,
-        },
+        payload::{IssueCommentWebhookEventAction, IssueCommentWebhookEventPayload},
     },
 };
-use tracing::error;
 
 use crate::{
-    config::{AppConfig, AutomergeRule},
+    automerge::update_automerge,
+    config::AppConfig,
     graphql::{
-        AddComment, CheckPermission, DequeuePullRequest, DisableAutomerge, PullRequestQuery,
-        actor_id, add_comment, check_permission, dequeue_pull_request, disable_automerge,
+        AddComment, CheckPermission, PullRequestQuery, add_comment, check_permission,
         pull_request_query,
     },
-    rules::{EligibleResult, check_automerge_eligibility, classify_user},
-    utils::merge_pull_request,
+    rules::{EligibleResult, check_automerge_eligibility},
 };
 
-pub async fn process_webhook_event(
-    config: AppConfig,
-    event: Box<WebhookEvent>,
-) -> Result<(), ErrorContext> {
-    match event.specific {
-        PullRequest(ref payload) => process_pr_event(config, &event, payload)
-            .await
-            .context("Error while processing PR event"),
-        IssueComment(ref payload) => process_comment_event(config, &event, payload)
-            .await
-            .context("Error while processing comment event"),
-        _ => Ok(()),
-    }
-}
+use std::fmt::Write;
 
-async fn process_pr_event(
-    config: AppConfig,
-    event: &WebhookEvent,
-    payload: &PullRequestWebhookEventPayload,
-) -> Result<(), ErrorContext> {
-    // action types we care about
-    if !matches!(
-        payload.action,
-        PullRequestWebhookEventAction::ReadyForReview
-            | PullRequestWebhookEventAction::Opened
-            | PullRequestWebhookEventAction::Reopened
-            | PullRequestWebhookEventAction::Synchronize
-            | PullRequestWebhookEventAction::Edited
-    ) {
-        return Ok(());
-    }
-    // check if the repo is in our config - if not, quit immediately
-    if event
-        .repository
-        .as_ref()
-        .and_then(|repo| repo.full_name.as_ref())
-        .is_none_or(|repo| {
-            !config.has_possible_rule(repo, classify_user(&payload.pull_request.user))
-        })
-    {
-        return Ok(());
-    }
-
-    // get a client for this installation
-    let Some(ref installation) = event.installation else {
-        bail!("No installation data present on webhook payload");
-    };
-    let client = config
-        .get_installation_client(installation.id())
-        .context("Failed to get a client for the installation")?;
-
-    // fetch all required data for the PR
-    let response: pull_request_query::ResponseData = client
-        .graphql(&PullRequestQuery::build_query(
-            pull_request_query::Variables {
-                node_id: payload.pull_request.node_id.clone(),
-            },
-        ))
-        .await
-        .context("Failed to execute PullRequestQuery via GraphQL")?;
-
-    // try to match a rule
-    update_automerge(
-        &client,
-        &response,
-        check_automerge_eligibility(&config, &response).ok(),
-    )
-    .await
-    .context("Failed to enable/disable PR automerge")
-}
-
-async fn process_comment_event(
+pub(super) async fn process_comment_event(
     config: AppConfig,
     event: &WebhookEvent,
     payload: &IssueCommentWebhookEventPayload,
@@ -265,65 +188,4 @@ async fn is_user_repo_admin(client: &Octocrab, event: &WebhookEvent) -> Result<b
         edge.permission,
         check_permission::RepositoryPermission::ADMIN,
     ))
-}
-
-async fn update_automerge(
-    client: &Octocrab,
-    response: &pull_request_query::ResponseData,
-    rule: Option<&AutomergeRule>,
-) -> Result<(), ErrorContext> {
-    match rule {
-        None => {
-            // undo automerge/enqueue, if we triggered it
-            if let Some(pull_request_query::PullRequestQueryNode::PullRequest(ref pull_request)) =
-                response.node
-            {
-                if let Some(ref automerge) = pull_request.auto_merge_request
-                && let Some(ref enabled_by) = automerge.enabled_by
-                && actor_id(enabled_by) == response.viewer.id
-                // disable automerge here
-                && let Err(e) = client
-                    .graphql::<disable_automerge::ResponseData>(
-                        &DisableAutomerge::build_query(disable_automerge::Variables {
-                            id: pull_request.id.clone(),
-                        }),
-                    )
-                    .await
-                {
-                    error!(
-                        "Failed to disable PR automerge after it lost automerge eligibility: {e:?}"
-                    );
-                }
-                if let Some(ref merge_queue) = pull_request.merge_queue_entry
-                && actor_id(&merge_queue.enqueuer) == response.viewer.id
-                // dequeue here
-                && let Err(e) = client
-                    .graphql::<dequeue_pull_request::ResponseData>(
-                        &DequeuePullRequest::build_query(dequeue_pull_request::Variables {
-                            id: pull_request.id.clone(),
-                        }),
-                    )
-                    .await
-                {
-                    error!("Failed to dequeue PR after it lost automerge eligibility: {e:?}");
-                }
-            }
-        }
-        Some(rule) => {
-            let Some(pull_request_query::PullRequestQueryNode::PullRequest(ref pull_request)) =
-                response.node
-            else {
-                return Ok(());
-            };
-            let head_id = pull_request.head_ref_oid.clone();
-            // check if automerge/queue is already enabled
-            if pull_request.auto_merge_request.is_some() || pull_request.merge_queue_entry.is_some()
-            {
-                return Ok(());
-            }
-            // merge
-            merge_pull_request(client, rule.merge_method, pull_request.id.clone(), head_id).await?;
-        }
-    }
-    Ok(())
 }
