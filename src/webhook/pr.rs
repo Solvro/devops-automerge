@@ -1,16 +1,10 @@
-use cloneable_errors::{ErrorContext, ResContext, bail};
-use graphql_client::GraphQLQuery;
+use cloneable_errors::{ErrorContext, bail};
 use octocrab::models::webhook_events::{
     WebhookEvent,
     payload::{PullRequestWebhookEventAction, PullRequestWebhookEventPayload},
 };
 
-use crate::{
-    automerge::update_automerge,
-    config::AppConfig,
-    graphql::{PullRequestQuery, pull_request_query},
-    rules::{check_automerge_eligibility, classify_user},
-};
+use crate::{automerge::debounced_update_automerge, config::AppConfig, rules::classify_user};
 
 pub(super) async fn process_pr_event(
     config: AppConfig,
@@ -40,30 +34,11 @@ pub(super) async fn process_pr_event(
         return Ok(());
     }
 
-    // get a client for this installation
+    // debounced upate
     let Some(ref installation) = event.installation else {
         bail!("No installation data present on webhook payload");
     };
-    let client = config
-        .get_installation_client(installation.id())
-        .context("Failed to get a client for the installation")?;
+    debounced_update_automerge(&config, installation.id(), &payload.pull_request.node_id).await;
 
-    // fetch all required data for the PR
-    let response: pull_request_query::ResponseData = client
-        .graphql(&PullRequestQuery::build_query(
-            pull_request_query::Variables {
-                node_id: payload.pull_request.node_id.clone(),
-            },
-        ))
-        .await
-        .context("Failed to execute PullRequestQuery via GraphQL")?;
-
-    // try to match a rule
-    update_automerge(
-        &client,
-        &response,
-        check_automerge_eligibility(&config, &response).ok(),
-    )
-    .await
-    .context("Failed to enable/disable PR automerge")
+    Ok(())
 }

@@ -1,16 +1,101 @@
-use cloneable_errors::ErrorContext;
+use std::{
+    collections::{HashMap, hash_map::Entry},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Duration,
+};
+
+use cloneable_errors::{ErrorContext, ResContext};
 use graphql_client::GraphQLQuery;
-use octocrab::Octocrab;
+use octocrab::{Octocrab, models::InstallationId};
+use tokio::time::sleep;
 use tracing::error;
 
 use crate::{
-    config::AutomergeRule,
+    config::{AppConfig, AutomergeRule},
     graphql::{
-        DequeuePullRequest, DisableAutomerge, actor_id, dequeue_pull_request, disable_automerge,
-        pull_request_query,
+        DequeuePullRequest, DisableAutomerge, PullRequestQuery, actor_id, dequeue_pull_request,
+        disable_automerge, pull_request_query,
     },
+    rules::check_automerge_eligibility,
     utils::merge_pull_request,
 };
+
+/// a map of pr node id -> debounce flag, wrapped in a mutex
+pub type AutomergeDebounceMap = Mutex<HashMap<String, Arc<AtomicBool>>>;
+
+pub async fn debounced_update_automerge(
+    config: &AppConfig,
+    installation_id: InstallationId,
+    node_id: &str,
+) -> () {
+    // try to register the PR in the debounce map
+    let flag = match config
+        .automerge_debounce_map
+        .lock()
+        .expect("debounce map lock poisoned")
+        .entry(node_id.to_owned())
+    {
+        // already exists, set to true instead
+        Entry::Occupied(entry) => {
+            entry.get().store(true, Ordering::Relaxed);
+            return;
+        }
+        // create and return
+        Entry::Vacant(entry) => {
+            let flag = Arc::<AtomicBool>::default();
+            entry.insert_entry(flag.clone());
+            flag
+        }
+    };
+
+    // debounce: wait 5s, check flag, repeat until flag is false
+    loop {
+        sleep(Duration::from_secs(5)).await;
+        if !flag.load(Ordering::Relaxed) {
+            break;
+        }
+    }
+
+    // remove from map
+    config
+        .automerge_debounce_map
+        .lock()
+        .expect("debounce map lock poisoned")
+        .remove(node_id);
+
+    // fetch pr data and update automerge
+    if let Err(e) = async {
+        let client = config
+            .get_installation_client(installation_id)
+            .context("Failed to get a client for the installation")?;
+
+        let response: pull_request_query::ResponseData = client
+            .graphql(&PullRequestQuery::build_query(
+                pull_request_query::Variables {
+                    node_id: node_id.to_owned(),
+                },
+            ))
+            .await
+            .context("Failed to execute PullRequestQuery via GraphQL")?;
+
+        update_automerge(
+            &client,
+            &response,
+            check_automerge_eligibility(config, &response).ok(),
+        )
+        .await
+        .context("Failed enable/disable automerge on PR")?;
+
+        Ok::<(), ErrorContext>(())
+    }
+    .await
+    {
+        error!("Debounced automerge update failed: {e:?}");
+    }
+}
 
 pub async fn update_automerge(
     client: &Octocrab,

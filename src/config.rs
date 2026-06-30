@@ -13,7 +13,7 @@ use octocrab::{
 };
 use serde::{Deserialize, Deserializer, de::Visitor};
 
-use crate::rules::UserType;
+use crate::{automerge::AutomergeDebounceMap, rules::UserType};
 
 #[derive(Clone)]
 pub struct AppConfig {
@@ -25,6 +25,8 @@ pub struct AppConfig {
     pub installation_clients: Arc<Mutex<HashMap<InstallationId, Arc<Octocrab>>>>,
     /// Automerge rules for deciding when to automatically merge a PR
     pub rules: Arc<[AutomergeRule]>,
+    /// A registry of debounce flags for automerge processing
+    pub automerge_debounce_map: Arc<AutomergeDebounceMap>,
 }
 
 impl From<&FileConfig> for AppConfig {
@@ -38,6 +40,7 @@ impl From<&FileConfig> for AppConfig {
                 .into(),
             installation_clients: Arc::default(),
             rules: value.rules.clone(),
+            automerge_debounce_map: Arc::default(),
         }
     }
 }
