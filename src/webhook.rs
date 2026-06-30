@@ -16,14 +16,14 @@ use octocrab::{
 use tracing::error;
 
 use crate::{
-    config::{AppConfig, AutomergeRule, SimpleMergeMethod, SplitMergeMethod},
+    config::{AppConfig, AutomergeRule},
     graphql::{
-        AddComment, CheckPermission, DequeuePullRequest, DisableAutomerge, EnableAutomerge,
-        EnqueuePullRequest, MergePullRequest, PullRequestQuery, actor_id, add_comment,
-        check_permission, dequeue_pull_request, disable_automerge, enable_automerge,
-        enqueue_pull_request, merge_pull_request, pull_request_query,
+        AddComment, CheckPermission, DequeuePullRequest, DisableAutomerge, PullRequestQuery,
+        actor_id, add_comment, check_permission, dequeue_pull_request, disable_automerge,
+        pull_request_query,
     },
     rules::{EligibleResult, check_automerge_eligibility, classify_user},
+    utils::merge_pull_request,
 };
 
 pub async fn process_webhook_event(
@@ -195,13 +195,13 @@ async fn process_check_command(
             }
         ),
         EligibleResult::FailedHardChecks(msg) => format!(
-            "This PR is not eligible for automerge, because it failed a hardcoded check - {msg}."
+            "This PR is not eligible for automerge because it failed a hardcoded check - {msg}."
         ),
         EligibleResult::NoRuleFound(failures) if failures.is_empty() => {
-            "This PR is not eligible for automerge, because it could not match any rules.".into()
+            "This PR is not eligible for automerge because it could not match any rules.".into()
         }
         EligibleResult::NoRuleFound(failures) => {
-            let mut res = "This PR is not eligible for automerge, because it could not match any rules.\nRule matches attempted:".to_string();
+            let mut res = "This PR is not eligible for automerge because it could not match any rules.\nRule matches attempted:".to_string();
             for (name, reason) in failures {
                 if let Some(name) = name {
                     write!(res, "\n- rule `{name}`: {reason}").unwrap();
@@ -267,7 +267,6 @@ async fn is_user_repo_admin(client: &Octocrab, event: &WebhookEvent) -> Result<b
     ))
 }
 
-#[allow(clippy::too_many_lines)]
 async fn update_automerge(
     client: &Octocrab,
     response: &pull_request_query::ResponseData,
@@ -323,63 +322,7 @@ async fn update_automerge(
                 return Ok(());
             }
             // merge
-            match rule.merge_method.split() {
-                SplitMergeMethod::Instant(method) => {
-                    client
-                        .graphql::<merge_pull_request::ResponseData>(
-                            &MergePullRequest::build_query(merge_pull_request::Variables {
-                                id: pull_request.id.clone(),
-                                head_oid: head_id,
-                                method: match method {
-                                    SimpleMergeMethod::Merge => {
-                                        merge_pull_request::PullRequestMergeMethod::MERGE
-                                    }
-                                    SimpleMergeMethod::Squash => {
-                                        merge_pull_request::PullRequestMergeMethod::SQUASH
-                                    }
-                                    SimpleMergeMethod::Rebase => {
-                                        merge_pull_request::PullRequestMergeMethod::REBASE
-                                    }
-                                },
-                            }),
-                        )
-                        .await
-                        .context("Failed to merge PR")?;
-                }
-                SplitMergeMethod::Auto(method) => {
-                    client
-                        .graphql::<enable_automerge::ResponseData>(&EnableAutomerge::build_query(
-                            enable_automerge::Variables {
-                                id: pull_request.id.clone(),
-                                head_oid: head_id,
-                                method: match method {
-                                    SimpleMergeMethod::Merge => {
-                                        enable_automerge::PullRequestMergeMethod::MERGE
-                                    }
-                                    SimpleMergeMethod::Squash => {
-                                        enable_automerge::PullRequestMergeMethod::SQUASH
-                                    }
-                                    SimpleMergeMethod::Rebase => {
-                                        enable_automerge::PullRequestMergeMethod::REBASE
-                                    }
-                                },
-                            },
-                        ))
-                        .await
-                        .context("Failed to enable automerge on PR")?;
-                }
-                SplitMergeMethod::Queue => {
-                    client
-                        .graphql::<enqueue_pull_request::ResponseData>(
-                            &EnqueuePullRequest::build_query(enqueue_pull_request::Variables {
-                                id: pull_request.id.clone(),
-                                head_oid: head_id,
-                            }),
-                        )
-                        .await
-                        .context("Failed to add PR to merge queue")?;
-                }
-            }
+            merge_pull_request(client, rule.merge_method, pull_request.id.clone(), head_id).await?;
         }
     }
     Ok(())
