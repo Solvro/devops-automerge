@@ -30,6 +30,53 @@ pub fn classify_user(user: &Author) -> UserType {
     }
 }
 
+type GQLCheckSuites<'a> = &'a [Option<
+    pull_request_query::PullRequestQueryNodeOnPullRequestChecksNodesCommitCheckSuitesNodes,
+>];
+
+#[derive(Clone, Copy, Default)]
+struct CheckSummary {
+    passed: u8,
+    failed: u8,
+    pending: u8,
+}
+
+fn summarize_checks(suites: GQLCheckSuites<'_>) -> CheckSummary {
+    let mut summary = CheckSummary::default();
+
+    suites
+        .iter()
+        .flatten()
+        .filter_map(|x| x.check_runs.as_ref())
+        .filter_map(|x| x.nodes.as_ref())
+        .flatten()
+        .flatten()
+        .for_each(|run| {
+            if matches!(run.status, pull_request_query::CheckStatusState::COMPLETED) {
+                match run.conclusion {
+                    None => {
+                        summary.pending += 1;
+                    }
+                    Some(pull_request_query::CheckConclusionState::SUCCESS) => {
+                        summary.passed += 1;
+                    }
+                    Some(
+                        pull_request_query::CheckConclusionState::STALE
+                        | pull_request_query::CheckConclusionState::SKIPPED
+                        | pull_request_query::CheckConclusionState::NEUTRAL,
+                    ) => {}
+                    Some(_) => {
+                        summary.failed += 1;
+                    }
+                }
+            } else {
+                summary.pending += 1;
+            }
+        });
+
+    summary
+}
+
 #[derive(Clone)]
 pub enum EligibleResult<'a> {
     /// failed a hardcoded check - fail reason
@@ -122,6 +169,18 @@ pub fn check_automerge_eligibility<'a>(
         );
     }
 
+    // get the last commit
+    let Some(checks) = pull_request
+        .checks
+        .nodes
+        .as_ref()
+        .and_then(|n| n.first().and_then(Option::as_ref))
+    else {
+        return EligibleResult::FailedHardChecks("Failed to fetch last commit's checks");
+    };
+
+    let checks = &checks.commit.check_suites;
+
     // try to match a rule
     let mut failures = Vec::<(Option<Arc<str>>, &'static str)>::new();
 
@@ -171,6 +230,32 @@ pub fn check_automerge_eligibility<'a>(
                 "PR changes file outside of allowed paths",
             ));
             continue;
+        }
+
+        // checks
+        if let Some(ref check_rules) = rule.checks {
+            let Some(checks) = checks.as_ref().and_then(|x| x.nodes.as_ref()) else {
+                failures.push((rule.name.clone(), "Could not fetch check suite data"));
+                continue;
+            };
+
+            let checks = summarize_checks(checks);
+
+            if let Some(max) = check_rules.max_pending
+                && checks.pending > max
+            {
+                failures.push((rule.name.clone(), "Too many pending checks"));
+            }
+            if let Some(max) = check_rules.max_failed
+                && checks.failed > max
+            {
+                failures.push((rule.name.clone(), "Too many failed checks"));
+            }
+            if let Some(min) = check_rules.min_passed
+                && checks.passed < min
+            {
+                failures.push((rule.name.clone(), "Not enough passed checks"));
+            }
         }
 
         // dependabot

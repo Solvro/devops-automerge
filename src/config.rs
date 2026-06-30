@@ -139,6 +139,11 @@ pub struct AutomergeRule {
     /// None = no restriction
     #[serde(default)]
     pub max_changed_lines: Option<u64>,
+    /// requirements for amount of passing/pending/failed checks to merge
+    ///
+    /// None = ignore checks
+    #[serde(default)]
+    pub checks: Option<ChecksRule>,
     /// rules for auto-merging dependabot PRs
     ///
     /// None = never merge dependabot PRs
@@ -194,6 +199,22 @@ pub enum SimpleMergeMethod {
     Merge,
     Rebase,
     Squash,
+}
+
+#[derive(Deserialize)]
+pub struct ChecksRule {
+    /// Max amount of checks that can be pending before the PR can be merged
+    ///
+    /// None = no restriction
+    pub max_pending: Option<u8>,
+    /// Amount of checks that must pass before the PR can be merged
+    ///
+    /// None = no restriction
+    pub min_passed: Option<u8>,
+    /// Max amount of checks that can be fail before the PR becomes ineligible for merging
+    ///
+    /// None = no restriction
+    pub max_failed: Option<u8>,
 }
 
 #[derive(Deserialize)]
