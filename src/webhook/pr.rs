@@ -4,7 +4,10 @@ use octocrab::models::webhook_events::{
     payload::{PullRequestWebhookEventAction, PullRequestWebhookEventPayload},
 };
 
-use crate::{automerge::debounced_update_automerge, config::AppConfig, rules::classify_user};
+use crate::{
+    config::AppConfig,
+    utils::{automerge::debounced_update_automerge, rules::classify_user},
+};
 
 pub(super) async fn process_pr_event(
     config: AppConfig,

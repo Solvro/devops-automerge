@@ -13,14 +13,13 @@ use octocrab::{Octocrab, models::InstallationId};
 use tokio::time::sleep;
 use tracing::error;
 
+use super::{pull_request::merge_pull_request, rules::check_automerge_eligibility};
 use crate::{
     config::{AppConfig, AutomergeRule},
     graphql::{
         DequeuePullRequest, DisableAutomerge, PullRequestQuery, actor_id, dequeue_pull_request,
         disable_automerge, pull_request_query,
     },
-    rules::check_automerge_eligibility,
-    utils::merge_pull_request,
 };
 
 /// a map of pr node id -> debounce flag, wrapped in a mutex

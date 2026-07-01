@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use octocrab::models::{Author, UserId};
 
+use super::dependabot::parse_dependabot_commit;
 use crate::{
     config::{AppConfig, AutomergeRule, DependabotRule},
-    dependabot::parse_dependabot_commit,
     graphql::{actor_id, pull_request_query},
 };
 

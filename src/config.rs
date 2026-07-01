@@ -13,7 +13,7 @@ use octocrab::{
 };
 use serde::{Deserialize, Deserializer, de::Visitor};
 
-use crate::{automerge::AutomergeDebounceMap, rules::UserType};
+use crate::utils::{automerge::AutomergeDebounceMap, rules::UserType};
 
 #[derive(Clone)]
 pub struct AppConfig {

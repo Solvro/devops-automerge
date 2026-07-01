@@ -11,7 +11,9 @@ use octocrab::models::webhook_events::WebhookEvent;
 use reqwest::StatusCode;
 use tracing::{debug, error, warn};
 
-use crate::{config::AppConfig, utils::verify_webhook_payload, webhook::process_webhook_event};
+use crate::{
+    config::AppConfig, utils::webhook::verify_webhook_payload, webhook::process_webhook_event,
+};
 
 pub fn create_router(app_config: AppConfig) -> Router<()> {
     Router::new()

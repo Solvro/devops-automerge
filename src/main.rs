@@ -2,16 +2,15 @@ use std::env;
 
 use cloneable_errors::{ErrorContext, ResContext};
 
-use crate::{config::FileConfig, health::run_healthchecks, server::run_server};
+use crate::{
+    config::FileConfig,
+    modes::{health::run_healthchecks, server::run_server},
+};
 
-mod automerge;
 mod config;
-mod dependabot;
 mod graphql;
-mod health;
+mod modes;
 mod routes;
-mod rules;
-mod server;
 mod utils;
 mod webhook;
 

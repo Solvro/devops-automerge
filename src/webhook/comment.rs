@@ -9,13 +9,15 @@ use octocrab::{
 };
 
 use crate::{
-    automerge::update_automerge,
     config::AppConfig,
     graphql::{
         AddComment, CheckPermission, PullRequestQuery, add_comment, check_permission,
         pull_request_query,
     },
-    rules::{EligibleResult, check_automerge_eligibility},
+    utils::{
+        automerge::update_automerge,
+        rules::{EligibleResult, check_automerge_eligibility},
+    },
 };
 
 use std::fmt::Write;
