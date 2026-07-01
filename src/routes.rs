@@ -12,7 +12,8 @@ use reqwest::StatusCode;
 use tracing::{debug, error, warn};
 
 use crate::{
-    config::AppConfig, utils::webhook::verify_webhook_payload, webhook::process_webhook_event,
+    config::AppConfig,
+    webhook::{process_webhook_event, verify_webhook_payload},
 };
 
 pub fn create_router(app_config: AppConfig) -> Router<()> {
