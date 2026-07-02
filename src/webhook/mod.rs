@@ -7,16 +7,19 @@ use ctutils::CtEq;
 use hmac::{Hmac, KeyInit, Mac};
 use octocrab::models::webhook_events::{
     WebhookEvent,
-    WebhookEventPayload::{IssueComment, PullRequest},
+    WebhookEventPayload::{CheckRun, IssueComment, PullRequest},
 };
 use sha2::Sha256;
 use tracing::warn;
 
 use crate::{
     config::AppConfig,
-    webhook::{comment::process_comment_event, pr::process_pr_event},
+    webhook::{
+        check_run::process_check_run_event, comment::process_comment_event, pr::process_pr_event,
+    },
 };
 
+mod check_run;
 mod comment;
 mod pr;
 
@@ -33,6 +36,9 @@ pub async fn process_webhook_event(
         IssueComment(ref payload) => process_comment_event(config, &event, payload)
             .await
             .context("Error while processing comment event"),
+        CheckRun(ref payload) => process_check_run_event(config, &event, payload)
+            .await
+            .context("Error while processing check_run event"),
         _ => Ok(()),
     }
 }
