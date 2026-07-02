@@ -75,3 +75,11 @@ pub struct CheckPermission;
     response_derives = "Debug"
 )]
 pub struct AddComment;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "queries/schema.graphql",
+    query_path = "queries/pull_request_by_number.graphql",
+    response_derives = "Debug"
+)]
+pub struct PullRequestByNumber;

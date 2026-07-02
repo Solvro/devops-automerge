@@ -6,7 +6,10 @@ use octocrab::models::webhook_events::{
 
 use crate::{
     config::AppConfig,
-    utils::{automerge::debounced_update_automerge, rules::classify_user},
+    utils::{
+        automerge::debounced_update_automerge, pull_request::PullRequestIdentifier,
+        rules::classify_user,
+    },
 };
 
 pub(super) async fn process_pr_event(
@@ -14,6 +17,19 @@ pub(super) async fn process_pr_event(
     event: &WebhookEvent,
     payload: &PullRequestWebhookEventPayload,
 ) -> Result<(), ErrorContext> {
+    // update the pr num -> id cache
+    if let Some(ref repo) = event.repository
+        && let Some(ref repo_id) = repo.node_id
+    {
+        config.pull_request_id_cache.set(
+            PullRequestIdentifier {
+                repository_id: repo_id.clone(),
+                pull_request_number: payload.pull_request.number,
+            },
+            &payload.pull_request.node_id,
+        );
+    }
+
     // action types we care about
     if !matches!(
         payload.action,

@@ -1,0 +1,10 @@
+query PullRequestByNumber($repository_id: ID!, $pr_number: Int!) {
+  node(id: $repository_id) {
+    __typename
+    ... on Repository {
+      pullRequest(number: $pr_number) {
+        id
+      }
+    }
+  }
+}

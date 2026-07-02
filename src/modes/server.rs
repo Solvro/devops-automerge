@@ -6,7 +6,7 @@ use std::{
 
 use async_signal::{Signal, Signals};
 use cloneable_errors::{ErrContext, ErrorContext, ResContext, anyhow, bail};
-use futures_lite::StreamExt;
+use futures::StreamExt;
 use tokio::{
     net::{TcpListener, UnixListener},
     select,

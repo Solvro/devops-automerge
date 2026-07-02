@@ -13,7 +13,9 @@ use octocrab::{
 };
 use serde::{Deserialize, Deserializer, de::Visitor};
 
-use crate::utils::{automerge::AutomergeDebounceMap, rules::UserType};
+use crate::utils::{
+    automerge::AutomergeDebounceMap, pull_request::PullRequestIdCache, rules::UserType,
+};
 
 #[derive(Clone)]
 pub struct AppConfig {
@@ -27,6 +29,8 @@ pub struct AppConfig {
     pub rules: Arc<[AutomergeRule]>,
     /// A registry of debounce flags for automerge processing
     pub automerge_debounce_map: Arc<AutomergeDebounceMap>,
+    /// Cache for repo+prnum -> node id lookups
+    pub pull_request_id_cache: Arc<PullRequestIdCache>,
 }
 
 impl From<&FileConfig> for AppConfig {
@@ -41,6 +45,7 @@ impl From<&FileConfig> for AppConfig {
             installation_clients: Arc::default(),
             rules: value.rules.clone(),
             automerge_debounce_map: Arc::default(),
+            pull_request_id_cache: Arc::default(),
         }
     }
 }

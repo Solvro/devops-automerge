@@ -16,6 +16,7 @@ use crate::{
     },
     utils::{
         automerge::update_automerge,
+        pull_request::PullRequestIdentifier,
         rules::{EligibleResult, check_automerge_eligibility},
     },
 };
@@ -27,6 +28,20 @@ pub(super) async fn process_comment_event(
     event: &WebhookEvent,
     payload: &IssueCommentWebhookEventPayload,
 ) -> Result<(), ErrorContext> {
+    // update the pr num -> id cache
+    if payload.issue.pull_request.is_some()
+        && let Some(ref repo) = event.repository
+        && let Some(ref repo_id) = repo.node_id
+    {
+        config.pull_request_id_cache.set(
+            PullRequestIdentifier {
+                repository_id: repo_id.clone(),
+                pull_request_number: payload.issue.number,
+            },
+            &payload.issue.node_id,
+        );
+    }
+
     // only care about new comments
     if payload.action != IssueCommentWebhookEventAction::Created {
         return Ok(());
