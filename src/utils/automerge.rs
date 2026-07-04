@@ -53,7 +53,7 @@ pub async fn debounced_update_automerge(
     // debounce: wait 5s, check flag, repeat until flag is false
     loop {
         sleep(Duration::from_secs(5)).await;
-        if !flag.load(Ordering::Relaxed) {
+        if !flag.swap(false, Ordering::Relaxed) {
             break;
         }
     }
