@@ -15,7 +15,7 @@ futures = { version = "0.3.32", default-features = false, features = ["async-awa
 glob = "0.3.3"
 graphql_client = "0.16.0"
 hmac = "0.13.0"
-jsonwebtoken = { version = "10.4.0" }
+jsonwebtoken = { version = "11.0.0" }
 octocrab = { version = "0.51.0", default-features = false, features = ["default-client", "follow-redirect", "jwt-rust-crypto", "retry", "rustls", "rustls-webpki-tokio", "timeout", "tracing"] }
 reqwest = "0.13.3"
 serde = { version = "1.0.228", features = ["derive", "rc"] }
