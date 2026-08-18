@@ -64,7 +64,7 @@ pub(super) async fn process_check_run_event(
                     .with_context(|| {
                         format!(
                             "Failed to fetch node id for pull request {} on repo id {}",
-                            identifier.pull_request_number, &identifier.repository_id
+                            identifier.pull_request_number, identifier.repository_id
                         )
                     })?;
 
