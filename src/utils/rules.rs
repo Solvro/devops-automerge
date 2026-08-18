@@ -269,7 +269,7 @@ pub fn check_automerge_eligibility<'a>(
             }
 
             debug!(
-                "PR matched rule '{}', PR data: {pull_request:#?}",
+                "PR matched rule '{}', GQL data: {response:#?}",
                 rule.name.as_deref().unwrap_or("unnamed rule")
             );
             return EligibleResult::FoundRule(rule);
