@@ -106,7 +106,11 @@ fn get_own_review<'a>(
         .filter_map(|r| r.nodes.as_ref())
         .flatten()
         .flatten()
-        .find(|r| r.author.as_ref().is_some_and(|a| a.login == login))
+        .find(|r| {
+            r.author
+                .as_ref()
+                .is_some_and(|a| a.login == login.strip_suffix("[bot]").unwrap_or(login))
+        })
         .map(|r| r.id.as_str())
 }
 
