@@ -98,7 +98,7 @@ pub async fn debounced_update_automerge(
 
 fn get_own_review<'a>(
     pull_request: &'a pull_request_query::PullRequestQueryNodeOnPullRequest,
-    login: &'_ str,
+    id: &'_ str,
 ) -> Option<&'a str> {
     pull_request
         .reviews
@@ -106,11 +106,7 @@ fn get_own_review<'a>(
         .filter_map(|r| r.nodes.as_ref())
         .flatten()
         .flatten()
-        .find(|r| {
-            r.author
-                .as_ref()
-                .is_some_and(|a| a.login == login.strip_suffix("[bot]").unwrap_or(login))
-        })
+        .find(|r| r.author.as_ref().is_some_and(|a| actor_id(a) == id))
         .map(|r| r.id.as_str())
 }
 
@@ -125,7 +121,7 @@ pub async fn update_automerge(
             if let Some(pull_request_query::PullRequestQueryNode::PullRequest(ref pull_request)) =
                 response.node
             {
-                if let Some(review_id) = get_own_review(pull_request, &response.viewer.login)
+                if let Some(review_id) = get_own_review(pull_request, &response.viewer.id)
                     && let Err(e) = client
                         .graphql::<dismiss_review::ResponseData>(&DismissReview::build_query(
                             dismiss_review::Variables {
@@ -179,7 +175,7 @@ pub async fn update_automerge(
             let head_id = pull_request.head_ref_oid.clone();
             // review if needed
             if rule.autoapprove
-                && get_own_review(pull_request, &response.viewer.login).is_none()
+                && get_own_review(pull_request, &response.viewer.id).is_none()
                 && let Err(e) = client
                     .graphql::<approve::ResponseData>(&Approve::build_query(approve::Variables {
                         id: pull_request.id.clone(),
