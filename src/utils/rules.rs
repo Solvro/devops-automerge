@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use octocrab::models::{Author, UserId};
+use tracing::debug;
 
 use super::dependabot::parse_dependabot_commit;
 use crate::{
@@ -262,15 +263,16 @@ pub fn check_automerge_eligibility<'a>(
         if let Some(ref dependabot) = rule.dependabot
             && pr_author.login == "dependabot"
         {
-            match match_dependabot_rule(dependabot, pull_request, pr_author) {
-                Some(failure) => {
-                    failures.push((rule.name.clone(), failure));
-                    continue;
-                }
-                None => {
-                    return EligibleResult::FoundRule(rule);
-                }
+            if let Some(failure) = match_dependabot_rule(dependabot, pull_request, pr_author) {
+                failures.push((rule.name.clone(), failure));
+                continue;
             }
+
+            debug!(
+                "PR matched rule '{}', PR data: {pull_request:#?}",
+                rule.name.as_deref().unwrap_or("unnamed rule")
+            );
+            return EligibleResult::FoundRule(rule);
         }
 
         failures.push((
