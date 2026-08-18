@@ -73,6 +73,14 @@ query PullRequestQuery($node_id: ID!) {
       repository {
         nameWithOwner
       }
+      reviews(states: APPROVED, first: 100) {
+        nodes {
+          author {
+            ...ActorProps
+          }
+          id
+        }
+      }
     }
   }
   viewer {

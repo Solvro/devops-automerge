@@ -119,6 +119,8 @@ pub struct AutomergeRule {
     pub repositories: Box<[Box<str>]>,
     /// merge method to use for PRs that match this rule
     pub merge_method: ConfigMergeMethod,
+    /// should we send an approving review before merging the pr?
+    pub autoapprove: bool,
     /// base branch names eligible for automerge
     ///
     /// None = all branches are eligible

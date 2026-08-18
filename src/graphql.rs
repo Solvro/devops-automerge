@@ -83,3 +83,19 @@ pub struct AddComment;
     response_derives = "Debug"
 )]
 pub struct PullRequestByNumber;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "queries/schema.graphql",
+    query_path = "queries/approve.graphql",
+    response_derives = "Debug"
+)]
+pub struct Approve;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "queries/schema.graphql",
+    query_path = "queries/dismiss_review.graphql",
+    response_derives = "Debug"
+)]
+pub struct DismissReview;

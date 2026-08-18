@@ -1,0 +1,10 @@
+mutation Approve($id: ID!, $comment: String!, $head_id: GitObjectID!) {
+  addPullRequestReview(input: {
+    body: $comment,
+    event: APPROVE,
+    pullRequestId: $id,
+    commitOID: $head_id,
+  }) {
+    clientMutationId
+  }
+}

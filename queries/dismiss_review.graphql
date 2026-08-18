@@ -1,0 +1,8 @@
+mutation DismissReview($id: ID!, $message: String!) {
+  dismissPullRequestReview(input: {
+    message: $message,
+    pullRequestReviewId: $id,
+  }) {
+    clientMutationId
+  }
+}

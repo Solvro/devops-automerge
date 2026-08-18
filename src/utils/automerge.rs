@@ -17,8 +17,8 @@ use super::{pull_request::merge_pull_request, rules::check_automerge_eligibility
 use crate::{
     config::{AppConfig, AutomergeRule},
     graphql::{
-        DequeuePullRequest, DisableAutomerge, PullRequestQuery, actor_id, dequeue_pull_request,
-        disable_automerge, pull_request_query,
+        Approve, DequeuePullRequest, DisableAutomerge, DismissReview, PullRequestQuery, actor_id,
+        approve, dequeue_pull_request, disable_automerge, dismiss_review, pull_request_query,
     },
 };
 
@@ -96,6 +96,20 @@ pub async fn debounced_update_automerge(
     }
 }
 
+fn get_own_review<'a>(
+    pull_request: &'a pull_request_query::PullRequestQueryNodeOnPullRequest,
+    login: &'_ str,
+) -> Option<&'a str> {
+    pull_request
+        .reviews
+        .iter()
+        .filter_map(|r| r.nodes.as_ref())
+        .flatten()
+        .flatten()
+        .find(|r| r.author.as_ref().is_some_and(|a| a.login == login))
+        .map(|r| r.id.as_str())
+}
+
 pub async fn update_automerge(
     client: &Octocrab,
     response: &pull_request_query::ResponseData,
@@ -107,6 +121,20 @@ pub async fn update_automerge(
             if let Some(pull_request_query::PullRequestQueryNode::PullRequest(ref pull_request)) =
                 response.node
             {
+                if let Some(review_id) = get_own_review(pull_request, &response.viewer.login)
+                    && let Err(e) = client
+                        .graphql::<dismiss_review::ResponseData>(&DismissReview::build_query(
+                            dismiss_review::Variables {
+                                id: review_id.to_owned(),
+                                message: "PR no longer matches any automerge rules".to_owned(),
+                            },
+                        ))
+                        .await
+                {
+                    error!(
+                        "Failed to dismiss own review after PR lost automerge eligibility: {e:?}"
+                    );
+                }
                 if let Some(ref automerge) = pull_request.auto_merge_request
                 && let Some(ref enabled_by) = automerge.enabled_by
                 && actor_id(enabled_by) == response.viewer.id
@@ -145,6 +173,23 @@ pub async fn update_automerge(
                 return Ok(());
             };
             let head_id = pull_request.head_ref_oid.clone();
+            // review if needed
+            if rule.autoapprove
+                && get_own_review(pull_request, &response.viewer.login).is_none()
+                && let Err(e) = client
+                    .graphql::<approve::ResponseData>(&Approve::build_query(approve::Variables {
+                        id: pull_request.id.clone(),
+                        head_id: head_id.clone(),
+                        comment: format!(
+                            "PR matches automerge rule '{}'",
+                            rule.name.as_deref().unwrap_or("unnamed rule")
+                        ),
+                    }))
+                    .await
+            {
+                error!("Failed to approve PR before automerging: {e:?}");
+            }
+
             // check if automerge/queue is already enabled
             if pull_request.auto_merge_request.is_some() || pull_request.merge_queue_entry.is_some()
             {
