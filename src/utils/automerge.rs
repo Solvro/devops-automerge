@@ -181,7 +181,7 @@ pub async fn update_automerge(
                         id: pull_request.id.clone(),
                         head_id: head_id.clone(),
                         comment: format!(
-                            "PR matches automerge rule `{}`",
+                            "PR matches automerge rule `{}`\n:fire: :shipit:",
                             rule.name.as_deref().unwrap_or("unnamed rule")
                         ),
                     }))
