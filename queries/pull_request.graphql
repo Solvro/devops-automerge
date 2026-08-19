@@ -47,6 +47,7 @@ query PullRequestQuery($node_id: ID!) {
                   nodes {
                     conclusion
                     status
+                    name
                   }
                 }
               }

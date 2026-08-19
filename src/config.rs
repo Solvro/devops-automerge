@@ -226,6 +226,14 @@ pub struct ChecksRule {
     ///
     /// None = no restriction
     pub max_failed: Option<u8>,
+    /// List of check names that must pass before the PR can be merged
+    ///
+    /// empty = no required checks
+    ///
+    /// WARNING: do not repeat checks!
+    ///          duplicating a check in this array will result in the rule always failing to match!
+    #[serde(default)]
+    pub required: Box<[Box<str>]>,
 }
 
 #[derive(Deserialize)]

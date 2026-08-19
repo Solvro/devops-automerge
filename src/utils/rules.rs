@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use octocrab::models::{Author, UserId};
+use smallbitvec::SmallBitVec;
 use tracing::debug;
 
 use super::dependabot::parse_dependabot_commit;
@@ -35,15 +36,28 @@ type GQLCheckSuites<'a> = &'a [Option<
     pull_request_query::PullRequestQueryNodeOnPullRequestChecksNodesCommitCheckSuitesNodes,
 >];
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone)]
 struct CheckSummary {
+    /// number of checks that passed
     passed: u8,
+    /// number of checks that failed
     failed: u8,
+    /// number of checks still pending
     pending: u8,
+    /// a bitfield with a boolean value for each configured required check
+    ///
+    /// to verify whether a given required check passed, read from the same index as the check held
+    /// in the `required_checks` array
+    required: SmallBitVec,
 }
 
-fn summarize_checks(suites: GQLCheckSuites<'_>) -> CheckSummary {
-    let mut summary = CheckSummary::default();
+fn summarize_checks(suites: GQLCheckSuites<'_>, required_checks: &[Box<str>]) -> CheckSummary {
+    let mut summary = CheckSummary {
+        passed: 0,
+        failed: 0,
+        pending: 0,
+        required: SmallBitVec::from_elem(required_checks.len(), false),
+    };
 
     suites
         .iter()
@@ -60,6 +74,12 @@ fn summarize_checks(suites: GQLCheckSuites<'_>) -> CheckSummary {
                     }
                     Some(pull_request_query::CheckConclusionState::SUCCESS) => {
                         summary.passed += 1;
+                        // also mark the check as passed in the required bitfield
+                        if let Some(index) =
+                            required_checks.iter().position(|name| **name == *run.name)
+                        {
+                            summary.required.set(index, true);
+                        }
                     }
                     Some(
                         pull_request_query::CheckConclusionState::STALE
@@ -240,7 +260,7 @@ pub fn check_automerge_eligibility<'a>(
                 continue;
             };
 
-            let checks = summarize_checks(checks);
+            let checks = summarize_checks(checks, &check_rules.required);
 
             if let Some(max) = check_rules.max_pending
                 && checks.pending > max
@@ -256,6 +276,12 @@ pub fn check_automerge_eligibility<'a>(
                 && checks.passed < min
             {
                 failures.push((rule.name.clone(), "Not enough passed checks"));
+            }
+            if !checks.required.all_true() {
+                failures.push((
+                    rule.name.clone(),
+                    "Required checks are still pending or have failed",
+                ));
             }
         }
 
