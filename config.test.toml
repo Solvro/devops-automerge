@@ -50,6 +50,8 @@ repositories = ["Solvro/lib-web-solvro-config"]
 # auto_*: merge, squash, rebase
 # add_to_merge_queue
 merge_method = "auto_squash"
+# if true, approve the PR before merging
+autoapprove = true
 # allowed base branches
 branches = ["main"]
 # allowed file path patterns
@@ -62,7 +64,22 @@ max_files = 3
 # max additions + deletions
 max_changed_lines = 67
 
+# require checks to pass before merging
+[rules.checks]
+# max amount of checks that may be pending
+# 0 = require all checks to finish
+max_pending = 0
+# max amount of checks that may fail
+max_failed = 0
+# min amount of checks that must pass
+min_passed = 1
+# require that checks with these names all pass
+required = ["lint"]
+
+# auto-merge dependabot PRs
 [rules.dependabot]
+# require all dependabot commits to match these attributes
+# (as specified by dependabot in commit messages)
 dependency_names = ["@solvro/config"]
 dependency_groups = ["typescript-eslint"]
 dependency_types = ["direct:production"]
