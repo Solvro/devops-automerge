@@ -18,8 +18,8 @@ pub struct UpdatedDependency {
 }
 
 pub fn parse_dependabot_commit(commit: &str) -> Option<DependabotCommit> {
-    let (_, metadata_block) = commit.split_once("---")?;
-    let (metadata_block, _) = metadata_block.split_once("...")?;
+    let (_, metadata_block) = commit.split_once("\n---\n")?;
+    let (metadata_block, _) = metadata_block.split_once("\n...")?;
     match yaml_serde::from_str(metadata_block) {
         Ok(x) => Some(x),
         Err(e) => {
