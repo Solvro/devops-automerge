@@ -126,6 +126,10 @@ async fn process_check_command(
 
     // post comment
     let mut comment = match check_result {
+        // don't need to post the comment if autoapprove is on and update_automerge() did not fail
+        EligibleResult::FoundRule(rule) if rule.autoapprove && update_result.is_ok() => {
+            return Ok(());
+        }
         EligibleResult::FoundRule(rule) => format!(
             "This PR is eligible for automerge based on {}.",
             if let Some(ref name) = rule.name {
