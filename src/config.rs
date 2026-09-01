@@ -76,7 +76,7 @@ impl AppConfig {
     /// commits or other PR metadata to fully verify,
     /// used as a check for whether it's worth fetching the full PR data
     pub fn has_possible_rule(&self, repo: &str, author_type: UserType) -> bool {
-        if let UserType::Unknown = author_type {
+        if author_type == UserType::Unknown {
             return false;
         }
 
@@ -185,7 +185,7 @@ pub enum ConfigMergeMethod {
 }
 
 impl ConfigMergeMethod {
-    pub fn split(self) -> SplitMergeMethod {
+    pub const fn split(self) -> SplitMergeMethod {
         match self {
             Self::InstantMerge => SplitMergeMethod::Instant(SimpleMergeMethod::Merge),
             Self::InstantRebase => SplitMergeMethod::Instant(SimpleMergeMethod::Rebase),
@@ -309,7 +309,7 @@ impl Default for ListenConfig {
     }
 }
 
-fn default_unix_mode() -> u32 {
+const fn default_unix_mode() -> u32 {
     0o666
 }
 

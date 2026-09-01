@@ -109,7 +109,7 @@ pub enum EligibleResult<'a> {
 }
 
 impl<'a> EligibleResult<'a> {
-    pub fn ok(&self) -> Option<&'a AutomergeRule> {
+    pub const fn ok(&self) -> Option<&'a AutomergeRule> {
         match self {
             Self::FoundRule(x) => Some(x),
             _ => None,
