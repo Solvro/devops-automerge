@@ -289,6 +289,11 @@ pub fn check_automerge_eligibility<'a>(
         if let Some(ref dependabot) = rule.dependabot
             && pr_author.login == "dependabot"
         {
+            if pull_request.body.contains("Dependabot is rebasing") {
+                failures.push((rule.name.clone(), "Dependabot is rebasing this PR"));
+                continue;
+            }
+
             if let Some(failure) = match_dependabot_rule(dependabot, pull_request, pr_author) {
                 failures.push((rule.name.clone(), failure));
                 continue;
