@@ -17,6 +17,9 @@ pub(super) async fn process_pr_event(
     event: &WebhookEvent,
     payload: &PullRequestWebhookEventPayload,
 ) -> Result<(), ErrorContext> {
+    let Some(pr_node_id) = payload.pull_request.node_id.as_deref() else {
+        bail!("Payload contains no PR node ID");
+    };
     // update the pr num -> id cache
     if let Some(ref repo) = event.repository
         && let Some(ref repo_id) = repo.node_id
@@ -26,9 +29,13 @@ pub(super) async fn process_pr_event(
                 repository_id: repo_id.clone(),
                 pull_request_number: payload.pull_request.number,
             },
-            &payload.pull_request.node_id,
+            pr_node_id,
         );
     }
+
+    let Some(pr_user) = payload.pull_request.user.as_deref() else {
+        bail!("Payload contains no PR user");
+    };
 
     // action types we care about
     if !matches!(
@@ -46,9 +53,7 @@ pub(super) async fn process_pr_event(
         .repository
         .as_ref()
         .and_then(|repo| repo.full_name.as_ref())
-        .is_none_or(|repo| {
-            !config.has_possible_rule(repo, classify_user(&payload.pull_request.user))
-        })
+        .is_none_or(|repo| !config.has_possible_rule(repo, classify_user(pr_user)))
     {
         return Ok(());
     }
@@ -57,7 +62,7 @@ pub(super) async fn process_pr_event(
     let Some(ref installation) = event.installation else {
         bail!("No installation data present on webhook payload");
     };
-    debounced_update_automerge(&config, installation.id(), &payload.pull_request.node_id).await;
+    debounced_update_automerge(&config, installation.id(), pr_node_id).await;
 
     Ok(())
 }
